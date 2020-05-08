@@ -2,12 +2,15 @@
 name = "filcrypto"
 description = "FFI Interface to Filecoin Proofs"
 version = "0.7.3"
-authors = ["laser <l@s3r.com>"]
+authors = ["laser <l@s3r.com>", "sbw <sbw@sbw.so>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/filecoin-project/filecoin-ffi"
 readme = "README.md"
 edition = "2018"
 publish = false
+
+[profile.release]
+lto = true
 
 [lib]
 crate-type = ["rlib", "staticlib"]
