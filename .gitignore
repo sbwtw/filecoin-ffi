@@ -2,6 +2,8 @@
 **/include
 **/paramcache
 **/target
+**/cmake-build-*
+**/.idea
 .install-filcrypto
 filcrypto.h
 filcrypto.pc
