@@ -3,7 +3,7 @@
 package ffi
 
 import (
-	"github.com/filecoin-project/filecoin-ffi/generated"
+	"github.com/sbwtw/filecoin-ffi/generated"
 )
 
 // #cgo LDFLAGS: ${SRCDIR}/libfilcrypto.a
