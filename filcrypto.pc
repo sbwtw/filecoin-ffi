@@ -1,0 +1,4 @@
+Name: filcrypto
+Version: cacb2889b4710924d24a45d5d8bfae8fde4f02de
+Description: C bindings for Filecoin Proofs
+Libs:  -lOpenCL -lOpenCL -lutil -ldl -lutil -ldl -lrt -lpthread -lgcc_s -lc -lm -lrt -lpthread -lutil -lutil
