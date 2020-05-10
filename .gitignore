@@ -5,9 +5,9 @@
 **/cmake-build-*
 **/.idea
 .install-filcrypto
-filcrypto.h
-filcrypto.pc
-filecoin.h
-filecoin.pc
+#filcrypto.h
+#filcrypto.pc
+#filecoin.h
+#filecoin.pc
 *.a
 simulator
