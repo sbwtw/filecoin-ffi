@@ -6,6 +6,7 @@ use filecoin_proofs_api::{
     PaddedBytesAmount, PieceInfo, RegisteredPoStProof, RegisteredSealProof, SectorId,
     UnpaddedByteIndex, UnpaddedBytesAmount,
 };
+use filecoin_webapi::*;
 use log::info;
 use std::mem;
 use std::path::PathBuf;
