@@ -37,7 +37,8 @@ git = "https://github.com/filecoin-project/rust-filecoin-proofs-api.git"
 branch = "master"
 
 [build-dependencies.filecoin-webapi]
-path = "../../Filecoin-webapi"
+git = "https://github.com/sbwtw/Filecoin-webapi"
+rev = "cbb0a743"
 
 [build-dependencies]
 cbindgen = "= 0.10.0"
