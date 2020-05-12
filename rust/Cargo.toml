@@ -31,15 +31,17 @@ rayon = "1.2.1"
 anyhow = "1.0.23"
 bellperson = { version = "0.6.2", features = ["gpu"] }
 serde_json = "1.0.46"
+lazy_static = "^1.4"
+reqwest = { version = "^0.10", features = ["blocking", "json"] }
 
 [dependencies.filecoin-proofs-api]
 git = "https://github.com/filecoin-project/rust-filecoin-proofs-api.git"
 branch = "master"
 
 [dependencies.filecoin-webapi]
-#git = "https://github.com/sbwtw/Filecoin-webapi"
-#rev = "cbb0a743"
-path = "../../Filecoin-webapi"
+git = "https://github.com/sbwtw/Filecoin-webapi"
+rev = "ba17278b482241c2fe01eea6fa326e6f1eab57b7"
+#path = "../../Filecoin-webapi"
 
 [build-dependencies]
 cbindgen = "= 0.10.0"
