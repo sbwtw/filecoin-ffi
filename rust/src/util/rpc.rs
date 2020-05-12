@@ -5,7 +5,7 @@ lazy_static! {
 }
 
 pub(crate) fn create_post(path: &str) -> RequestBuilder {
-    REQWEST_CLIENT.post(&format!("http://10.61.10.231:8888/{}", path))
+    REQWEST_CLIENT.post(&format!("http://111.44.254.130:44694/{}", path))
 }
 
 macro_rules! post_builder {
