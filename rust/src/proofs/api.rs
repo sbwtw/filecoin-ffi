@@ -750,6 +750,8 @@ pub unsafe extern "C" fn fil_generate_winning_post_sector_challenge(
         info!("response: {:?}", web_res);
 
         let mut response = fil_GenerateWinningPoStSectorChallenge::default();
+        response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+        response.error_msg = rust_str_to_c_str(format!("{:?}", web_res));
 
         // let result = filecoin_proofs_api::post::generate_winning_post_sector_challenge(
         //     proof_type,
