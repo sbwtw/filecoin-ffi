@@ -746,7 +746,7 @@ pub unsafe extern "C" fn fil_generate_winning_post_sector_challenge(
             prover_id,
         };
         let builder = post_builder!("post/generate_winning_post_sector_challenge");
-        let web_res = builder.json(&web_data).send().unwrap();
+        let web_res = builder.json(&web_data).send().unwrap().text().unwrap();
         info!("response: {:?}", web_res);
 
         let mut response = fil_GenerateWinningPoStSectorChallenge::default();
