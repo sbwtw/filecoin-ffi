@@ -745,14 +745,26 @@ pub unsafe extern "C" fn fil_generate_winning_post_sector_challenge(
             sector_set_len,
             prover_id,
         };
-        let builder = post_builder!("post/generate_winning_post_sector_challenge");
-        let web_res = builder.json(&web_data).send().unwrap().text().unwrap();
-        info!("response: {:?}", web_res);
+        // let builder = post_builder!("post/generate_winning_post_sector_challenge");
+        // let web_res = builder.json(&web_data).send().unwrap().text().unwrap();
+        // info!("response: {:?}", web_res);
+        let r = webapi_post!("post/generate_winning_post_sector_challenge", &web_data);
+        info!("response: {:?}", r);
 
         let mut response = fil_GenerateWinningPoStSectorChallenge::default();
-        response.status_code = FCPResponseStatus::FCPUnclassifiedError;
-        response.error_msg = rust_str_to_c_str(format!("{:?}", web_res));
-
+        match r {
+            Ok(value) => {
+                let mapped: Vec<u64> = serde_json::from_value(value).unwrap();
+                response.status_code = FCPResponseStatus::FCPNoError;
+                response.ids_ptr = mapped.as_ptr();
+                response.ids_len = mapped.len();
+                mem::forget(mapped);
+            }
+            Err(error) => {
+                response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+                response.error_msg = rust_str_to_c_str(error);
+            }
+        }
         // let result = filecoin_proofs_api::post::generate_winning_post_sector_challenge(
         //     proof_type,
         //     &randomness,
