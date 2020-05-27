@@ -1,7 +1,7 @@
 use ffi_toolkit::{c_str_to_pbuf, catch_panic_response, raw_ptr, rust_str_to_c_str, FCPResponseStatus};
 use filecoin_proofs_api::seal::SealPreCommitPhase2Output;
 use filecoin_proofs_api::{
-    PaddedBytesAmount, PieceInfo, RegisteredPoStProof, RegisteredSealProof, SectorId, UnpaddedByteIndex,
+    PaddedBytesAmount, PieceInfo, RegisteredPoStProof, RegisteredSealProof, SectorId, SnarkProof, UnpaddedByteIndex,
     UnpaddedBytesAmount,
 };
 use filecoin_webapi::*;
@@ -10,9 +10,10 @@ use std::mem;
 use std::path::PathBuf;
 use std::slice::from_raw_parts;
 
-use super::helpers::{c_to_rust_post_proofs, to_private_replica_info_map};
+use super::helpers::{c_to_rust_post_proofs, to_private_replica_info_map, to_web_private_replica_info_map};
 use super::types::*;
 use crate::util::api::init_log;
+use filecoin_webapi::types::{WebPrivateReplica, WebPrivateReplicas};
 // use crate::util::rpc::post_builder;
 
 /// TODO: document
@@ -808,38 +809,82 @@ pub unsafe extern "C" fn fil_generate_winning_post(
         info!("generate_winning_post: start");
 
         let mut response = fil_GenerateWinningPoStResponse::default();
-
-        let result = to_private_replica_info_map(replicas_ptr, replicas_len)
-            .and_then(|rs| filecoin_proofs_api::post::generate_winning_post(&randomness.inner, &rs, prover_id.inner));
-
-        match result {
-            Ok(output) => {
-                let mapped: Vec<fil_PoStProof> = output
-                    .iter()
-                    .cloned()
-                    .map(|(t, proof)| {
-                        let out = fil_PoStProof {
-                            registered_proof: (t).into(),
-                            proof_len: proof.len(),
-                            proof_ptr: proof.as_ptr(),
-                        };
-
-                        mem::forget(proof);
-
-                        out
-                    })
-                    .collect();
-
-                response.status_code = FCPResponseStatus::FCPNoError;
-                response.proofs_ptr = mapped.as_ptr();
-                response.proofs_len = mapped.len();
-                mem::forget(mapped);
-            }
-            Err(err) => {
+        let web_replicas = match to_web_private_replica_info_map(replicas_ptr, replicas_len) {
+            Ok(replicas) => replicas,
+            Err(e) => {
                 response.status_code = FCPResponseStatus::FCPUnclassifiedError;
-                response.error_msg = rust_str_to_c_str(format!("{:?}", err));
+                response.error_msg = rust_str_to_c_str(format!("{:?}", e));
+                return raw_ptr(response);
             }
+        };
+
+        let web_data = post_data::GenerateWinningPostData {
+            randomness: randomness.inner,
+            replicas: web_replicas,
+            prover_id: prover_id.inner,
+        };
+        let r = webapi_post!("post/generate_winning_post", &web_data);
+        info!("response: {:?}", r);
+
+        if let Err(e) = r {
+            response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+            response.error_msg = rust_str_to_c_str(format!("{:?}", e));
+            return raw_ptr(response);
         }
+
+        let output: Vec<(RegisteredPoStProof, SnarkProof)> = serde_json::from_value(r.unwrap()).unwrap();
+        let mapped: Vec<fil_PoStProof> = output
+            .iter()
+            .cloned()
+            .map(|(t, proof)| {
+                let out = fil_PoStProof {
+                    registered_proof: (t).into(),
+                    proof_len: proof.len(),
+                    proof_ptr: proof.as_ptr(),
+                };
+
+                mem::forget(proof);
+
+                out
+            })
+            .collect();
+
+        response.status_code = FCPResponseStatus::FCPNoError;
+        response.proofs_ptr = mapped.as_ptr();
+        response.proofs_len = mapped.len();
+        mem::forget(mapped);
+
+        // let result = to_private_replica_info_map(replicas_ptr, replicas_len)
+        //     .and_then(|rs| filecoin_proofs_api::post::generate_winning_post(&randomness.inner, &rs, prover_id.inner));
+
+        // match result {
+        //     Ok(output) => {
+        //         let mapped: Vec<fil_PoStProof> = output
+        //             .iter()
+        //             .cloned()
+        //             .map(|(t, proof)| {
+        //                 let out = fil_PoStProof {
+        //                     registered_proof: (t).into(),
+        //                     proof_len: proof.len(),
+        //                     proof_ptr: proof.as_ptr(),
+        //                 };
+        //
+        //                 mem::forget(proof);
+        //
+        //                 out
+        //             })
+        //             .collect();
+        //
+        //         response.status_code = FCPResponseStatus::FCPNoError;
+        //         response.proofs_ptr = mapped.as_ptr();
+        //         response.proofs_len = mapped.len();
+        //         mem::forget(mapped);
+        //     }
+        //     Err(err) => {
+        //         response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+        //         response.error_msg = rust_str_to_c_str(format!("{:?}", err));
+        //     }
+        // }
 
         info!("generate_winning_post: finish");
 

@@ -9,12 +9,12 @@ lazy_static! {
 static HOST: &str = "127.0.0.1:8888";
 // static HOST: &str = "111.44.254.130:44694";
 
-pub(crate) fn create_post(path: &str) -> RequestBuilder {
-    REQWEST_CLIENT.post(&format!("http://{}/{}", HOST, path))
-}
+// pub(crate) fn create_post(path: &str) -> RequestBuilder {
+//     REQWEST_CLIENT.post(&format!("http://{}/{}", HOST, path))
+// }
 
 pub(crate) fn webapi_post<T: Serialize + ?Sized>(path: &str, json: &T) -> Result<Value, String> {
-    let mut post = REQWEST_CLIENT.post(&format!("http://{}/{}", HOST, path));
+    let post = REQWEST_CLIENT.post(&format!("http://{}/{}", HOST, path));
     let response = post
         .json(json)
         .send()
@@ -30,11 +30,11 @@ pub(crate) fn webapi_post<T: Serialize + ?Sized>(path: &str, json: &T) -> Result
     return Ok(value);
 }
 
-macro_rules! post_builder {
-    ($path:literal) => {
-        crate::util::rpc::create_post($path)
-    };
-}
+// macro_rules! post_builder {
+//     ($path:literal) => {
+//         crate::util::rpc::create_post($path)
+//     };
+// }
 
 macro_rules! webapi_post {
     ($path:literal, $json:expr) => {
