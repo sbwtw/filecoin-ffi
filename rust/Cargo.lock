@@ -1130,7 +1130,7 @@ dependencies = [
  "ffi-toolkit 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "fil_logger 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "filecoin-proofs-api 0.1.0 (git+https://github.com/filecoin-project/rust-filecoin-proofs-api.git)",
- "filecoin-webapi 0.1.0 (git+https://github.com/sbwtw/Filecoin-webapi?rev=29b4d07)",
+ "filecoin-webapi 0.1.0 (git+https://github.com/sbwtw/Filecoin-webapi?rev=71f1ebe)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.69 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1209,7 +1209,7 @@ dependencies = [
 [[package]]
 name = "filecoin-webapi"
 version = "0.1.0"
-source = "git+https://github.com/sbwtw/Filecoin-webapi?rev=29b4d07#29b4d07703dbfdb7d97865d5477faee2c1a63db5"
+source = "git+https://github.com/sbwtw/Filecoin-webapi?rev=71f1ebe#71f1ebe786b087a989cf099bbfa2355bcd4c7646"
 dependencies = [
  "actix-multipart 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "actix-rt 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3977,7 +3977,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum fil_logger 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a4017ffdf45e6702db1d826eada1dc1df0b7f9eda427de3000959216b93cd676"
 "checksum filecoin-proofs 1.0.0-alpha.0 (git+https://github.com/filecoin-project/rust-fil-proofs?rev=d7896c29ef3c0cc8c04f9fab7ef434e6691ed480)" = "<none>"
 "checksum filecoin-proofs-api 0.1.0 (git+https://github.com/filecoin-project/rust-filecoin-proofs-api.git)" = "<none>"
-"checksum filecoin-webapi 0.1.0 (git+https://github.com/sbwtw/Filecoin-webapi?rev=29b4d07)" = "<none>"
+"checksum filecoin-webapi 0.1.0 (git+https://github.com/sbwtw/Filecoin-webapi?rev=71f1ebe)" = "<none>"
 "checksum filetime 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)" = "f59efc38004c988e4201d11d263b8171f49a2e7ec0bdbb71773433f271504a5e"
 "checksum flate2 1.0.14 (registry+https://github.com/rust-lang/crates.io-index)" = "2cfff41391129e0a856d6d822600b8d71179d46879e310417eb9c762eb178b42"
 "checksum flexi_logger 0.14.8 (registry+https://github.com/rust-lang/crates.io-index)" = "515fb7f6541dafe542c87c12a7ab6a52190cccb6c348b5951ef62d9978189ae8"

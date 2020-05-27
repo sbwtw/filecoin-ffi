@@ -499,11 +499,10 @@ pub unsafe extern "C" fn fil_verify_winning_post(
             Ok(replicas) => {
                 let post_proofs = c_to_rust_post_proofs(proofs_ptr, proofs_len).unwrap();
                 let proofs: Vec<u8> = post_proofs.iter().flat_map(|pp| pp.clone().proof).collect();
-                let proof = String::from_utf8(proofs).unwrap();
 
                 post_data::VerifyWinningPostData {
                     randomness: randomness.inner,
-                    proof,
+                    proof: proofs,
                     replicas,
                     prover_id: prover_id.inner,
                 }
@@ -524,7 +523,7 @@ pub unsafe extern "C" fn fil_verify_winning_post(
             return raw_ptr(response);
         }
 
-        let is_valid: bool = serde_json::from_value(r.unwrap().get("ok").unwrap().clone()).unwrap();
+        let is_valid: bool = serde_json::from_value(r.unwrap().get("Ok").unwrap().clone()).unwrap();
         response.status_code = FCPResponseStatus::FCPNoError;
         response.is_valid = is_valid;
 
@@ -789,7 +788,7 @@ pub unsafe extern "C" fn fil_generate_winning_post_sector_challenge(
         let mut response = fil_GenerateWinningPoStSectorChallenge::default();
         match r {
             Ok(value) => {
-                let mapped: Vec<u64> = serde_json::from_value(value.get("ok").unwrap().clone()).unwrap();
+                let mapped: Vec<u64> = serde_json::from_value(value.get("Ok").unwrap().clone()).unwrap();
                 response.status_code = FCPResponseStatus::FCPNoError;
                 response.ids_ptr = mapped.as_ptr();
                 response.ids_len = mapped.len();
@@ -867,7 +866,7 @@ pub unsafe extern "C" fn fil_generate_winning_post(
         }
 
         let output: Vec<(RegisteredPoStProof, SnarkProof)> =
-            serde_json::from_value(r.unwrap().get("ok").unwrap().clone()).unwrap();
+            serde_json::from_value(r.unwrap().get("Ok").unwrap().clone()).unwrap();
         let mapped: Vec<fil_PoStProof> = output
             .iter()
             .cloned()
