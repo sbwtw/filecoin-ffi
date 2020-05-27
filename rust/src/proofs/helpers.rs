@@ -8,13 +8,56 @@ use filecoin_proofs_api::{PrivateReplicaInfo, PublicReplicaInfo, SectorId};
 
 use super::types::{fil_PrivateReplicaInfo, fil_PublicReplicaInfo, fil_RegisteredPoStProof};
 use crate::proofs::types::{fil_PoStProof, PoStProof};
-use filecoin_webapi::types::{WebPrivateReplica, WebPrivateReplicaInfo, WebPrivateReplicas};
+use filecoin_webapi::types::{
+    WebPrivateReplica, WebPrivateReplicaInfo, WebPrivateReplicas, WebPublicReplica, WebPublicReplicaInfo,
+    WebPublicReplicas,
+};
 
 #[derive(Debug, Clone)]
 struct PublicReplicaInfoTmp {
     pub registered_proof: fil_RegisteredPoStProof,
     pub comm_r: [u8; 32],
     pub sector_id: u64,
+}
+
+pub unsafe fn to_web_public_replica_info_map(
+    replicas_ptr: *const fil_PublicReplicaInfo,
+    replicas_len: libc::size_t,
+) -> Result<WebPublicReplicas> {
+    use rayon::prelude::*;
+
+    ensure!(!replicas_ptr.is_null(), "replicas_ptr must not be null");
+
+    let mut replicas = Vec::new();
+
+    for ffi_info in from_raw_parts(replicas_ptr, replicas_len) {
+        replicas.push(WebPublicReplica {
+            sector_id: ffi_info.sector_id.into(),
+            public_replica_info: WebPublicReplicaInfo {
+                registered_proof: ffi_info.registered_proof.into(),
+                comm_r: ffi_info.comm_r,
+                sector_id: ffi_info.sector_id.into(),
+            },
+        });
+    }
+
+    // let map = replicas
+    //     .into_par_iter()
+    //     .map(|info| {
+    //         let PublicReplicaInfoTmp {
+    //             registered_proof,
+    //             comm_r,
+    //             sector_id,
+    //         } = info;
+    //
+    //         (
+    //             SectorId::from(sector_id),
+    //             PublicReplicaInfo::new(registered_proof.into(), comm_r),
+    //         )
+    //     })
+    //     .collect();
+
+    Ok(WebPublicReplicas(replicas))
 }
 
 #[allow(clippy::type_complexity)]

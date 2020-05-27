@@ -10,8 +10,11 @@ use std::mem;
 use std::path::PathBuf;
 use std::slice::from_raw_parts;
 
-use super::helpers::{c_to_rust_post_proofs, to_private_replica_info_map, to_web_private_replica_info_map};
+use super::helpers::{
+    c_to_rust_post_proofs, to_private_replica_info_map, to_public_replica_info_map, to_web_private_replica_info_map,
+};
 use super::types::*;
+use crate::proofs::helpers::to_web_public_replica_info_map;
 use crate::util::api::init_log;
 use filecoin_webapi::types::{WebPrivateReplica, WebPrivateReplicas};
 // use crate::util::rpc::post_builder;
@@ -492,25 +495,56 @@ pub unsafe extern "C" fn fil_verify_winning_post(
 
         let mut response = fil_VerifyWinningPoStResponse::default();
 
-        let convert = super::helpers::to_public_replica_info_map(replicas_ptr, replicas_len);
+        let web_data = match to_web_public_replica_info_map(replicas_ptr, replicas_len) {
+            Ok(replicas) => {
+                let post_proofs = c_to_rust_post_proofs(proofs_ptr, proofs_len).unwrap();
+                let proofs: Vec<u8> = post_proofs.iter().flat_map(|pp| pp.clone().proof).collect();
+                let proof = String::from_utf8(proofs).unwrap();
 
-        let result = convert.and_then(|replicas| {
-            let post_proofs = c_to_rust_post_proofs(proofs_ptr, proofs_len)?;
-            let proofs: Vec<u8> = post_proofs.iter().flat_map(|pp| pp.clone().proof).collect();
-
-            filecoin_proofs_api::post::verify_winning_post(&randomness.inner, &proofs, &replicas, prover_id.inner)
-        });
-
-        match result {
-            Ok(is_valid) => {
-                response.status_code = FCPResponseStatus::FCPNoError;
-                response.is_valid = is_valid;
+                post_data::VerifyWinningPostData {
+                    randomness: randomness.inner,
+                    proof,
+                    replicas,
+                    prover_id: prover_id.inner,
+                }
             }
-            Err(err) => {
+            Err(e) => {
                 response.status_code = FCPResponseStatus::FCPUnclassifiedError;
-                response.error_msg = rust_str_to_c_str(format!("{:?}", err));
+                response.error_msg = rust_str_to_c_str(format!("{:?}", e));
+                return raw_ptr(response);
             }
         };
+
+        let r = webapi_post!("post/verify_winning_post", &web_data);
+        info!("response: {:?}", r);
+
+        if let Err(e) = r {
+            response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+            response.error_msg = rust_str_to_c_str(format!("{:?}", e));
+            return raw_ptr(response);
+        }
+
+        let is_valid: bool = serde_json::from_value(r.unwrap()).unwrap();
+        response.status_code = FCPResponseStatus::FCPNoError;
+        response.is_valid = is_valid;
+
+        // let result = convert.and_then(|replicas| {
+        //     let post_proofs = c_to_rust_post_proofs(proofs_ptr, proofs_len)?;
+        //     let proofs: Vec<u8> = post_proofs.iter().flat_map(|pp| pp.clone().proof).collect();
+        //
+        //     filecoin_proofs_api::post::verify_winning_post(&randomness.inner, &proofs, &replicas, prover_id.inner)
+        // });
+        //
+        // match result {
+        //     Ok(is_valid) => {
+        //         response.status_code = FCPResponseStatus::FCPNoError;
+        //         response.is_valid = is_valid;
+        //     }
+        //     Err(err) => {
+        //         response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+        //         response.error_msg = rust_str_to_c_str(format!("{:?}", err));
+        //     }
+        // };
 
         info!("verify_winning_post: {}", "finish");
         raw_ptr(response)

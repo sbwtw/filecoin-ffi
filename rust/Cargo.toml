@@ -41,7 +41,7 @@ branch = "master"
 
 [dependencies.filecoin-webapi]
 git = "https://github.com/sbwtw/Filecoin-webapi"
-rev = "2d8aa35"
+rev = "29b4d07"
 #path = "../../Filecoin-webapi"
 
 [build-dependencies]
