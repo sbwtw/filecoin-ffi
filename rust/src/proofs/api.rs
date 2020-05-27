@@ -524,7 +524,7 @@ pub unsafe extern "C" fn fil_verify_winning_post(
             return raw_ptr(response);
         }
 
-        let is_valid: bool = serde_json::from_value(r.unwrap()).unwrap();
+        let is_valid: bool = serde_json::from_value(r.unwrap().get("ok").unwrap().clone()).unwrap();
         response.status_code = FCPResponseStatus::FCPNoError;
         response.is_valid = is_valid;
 
@@ -789,7 +789,7 @@ pub unsafe extern "C" fn fil_generate_winning_post_sector_challenge(
         let mut response = fil_GenerateWinningPoStSectorChallenge::default();
         match r {
             Ok(value) => {
-                let mapped: Vec<u64> = serde_json::from_value(value).unwrap();
+                let mapped: Vec<u64> = serde_json::from_value(value.get("ok").unwrap().clone()).unwrap();
                 response.status_code = FCPResponseStatus::FCPNoError;
                 response.ids_ptr = mapped.as_ptr();
                 response.ids_len = mapped.len();
@@ -866,7 +866,8 @@ pub unsafe extern "C" fn fil_generate_winning_post(
             return raw_ptr(response);
         }
 
-        let output: Vec<(RegisteredPoStProof, SnarkProof)> = serde_json::from_value(r.unwrap()).unwrap();
+        let output: Vec<(RegisteredPoStProof, SnarkProof)> =
+            serde_json::from_value(r.unwrap().get("ok").unwrap().clone()).unwrap();
         let mapped: Vec<fil_PoStProof> = output
             .iter()
             .cloned()
