@@ -1,12 +1,14 @@
 use reqwest::blocking::{Client, RequestBuilder};
 use serde::ser::Serialize;
 use serde_json::Value;
+use std::fs;
 
 lazy_static! {
     static ref REQWEST_CLIENT: Client = Client::new();
+    static ref HOST: String = fs::read_to_string("/etc/filecoin-webapi.conf").unwrap();
 }
 
-static HOST: &str = "127.0.0.1:8888";
+// static HOST: &str = "127.0.0.1:8888";
 // static HOST: &str = "111.44.254.130:44694";
 
 // pub(crate) fn create_post(path: &str) -> RequestBuilder {
@@ -14,7 +16,7 @@ static HOST: &str = "127.0.0.1:8888";
 // }
 
 pub(crate) fn webapi_post<T: Serialize + ?Sized>(path: &str, json: &T) -> Result<Value, String> {
-    let post = REQWEST_CLIENT.post(&format!("http://{}/{}", HOST, path));
+    let post = REQWEST_CLIENT.post(&format!("http://{}/{}", &*HOST, path));
     let response = post
         .json(json)
         .send()
