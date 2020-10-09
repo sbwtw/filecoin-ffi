@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+package scheduler;
+
+service Scheduler {
+  rpc Test(Empty) returns (Empty) {}
+  rpc TryAccess(AccessResource) returns (ResourceResult) {}
+  rpc RemoveGuard(ResourceToken) returns (ExecResult) {}
+  rpc Ping(ResourceToken) returns (ExecResult) {}
+}
+
+message Empty {}
+
+message AccessResource {
+  required string name = 1;
+  required string request_resource = 2;
+}
+
+message ResourceResult {
+  optional ResourceToken token = 1;
+}
+
+message ResourceToken {
+  required uint64 token = 1;
+}
+
+message ExecResult {
+  required bool result = 1;
+}

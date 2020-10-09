@@ -33,6 +33,10 @@ serde_yaml = "*"
 once_cell = "*"
 reqwest = { version = "*", features = ["json", "blocking"] }
 filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", rev = "ce9f5fc" }
+grpc = "~0.8"
+grpc-protobuf = "*"
+protobuf = "~2"
+futures = "~0.3"
 
 neptune = "=1.1.1"
 neptune-triton = "=1.0.0"
@@ -43,6 +47,7 @@ version = "5.1.1"
 
 [build-dependencies]
 cbindgen = "= 0.14.0"
+protoc-rust-grpc = "~0.8"
 
 [dev-dependencies]
 tempfile = "3.0.8"

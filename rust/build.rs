@@ -8,4 +8,11 @@ fn main() {
     cbindgen::generate(std::env::var("CARGO_MANIFEST_DIR").unwrap())
         .expect("Could not generate header")
         .write_to_file(hdr_out);
+
+    protoc_rust_grpc::Codegen::new()
+        .out_dir("src")
+        .input("scheduler.proto")
+        .rust_protobuf(true)
+        .run()
+        .expect("protoc-rust-grpc failed");
 }
