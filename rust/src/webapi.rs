@@ -78,7 +78,7 @@ macro_rules! wait_cond {
 
 fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> LiveGuard {
     let client: SchedulerClient =
-        SchedulerClient::new_plain("localhost", 6000, Default::default()).unwrap();
+        SchedulerClient::new_plain("127.0.0.1", 3000, Default::default()).unwrap();
 
     let req_name = format!(
         "{}-{}",
