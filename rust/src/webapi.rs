@@ -27,13 +27,15 @@ use std::{env, mem, thread};
 static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     let mut builder = ClientBuilder::new();
     for config in CONFIG.servers.iter() {
-        let mut buf = vec![];
-        fs::File::open(&config.cert)
-            .expect("open cert file failed!")
-            .read_to_end(&mut buf)
-            .expect("read cert file failed");
-        let cert = Certificate::from_pem(&buf).expect("read PEM cert failed");
-        builder = builder.add_root_certificate(cert);
+        if let Some(cert) = &config.cert {
+            let mut buf = vec![];
+            fs::File::open(cert)
+                .expect("open cert file failed!")
+                .read_to_end(&mut buf)
+                .expect("read cert file failed");
+            let c = Certificate::from_pem(&buf).expect("read PEM cert failed");
+            builder = builder.add_root_certificate(c);
+        }
     }
 
     builder.build().expect("Build Reqwest client failed!")
@@ -50,7 +52,7 @@ static CONFIG: Lazy<WebApiConfig> = Lazy::new(|| {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 struct ServerConfig {
     url: String,
-    cert: String,
+    cert: Option<String>,
     token: String,
 }
 
