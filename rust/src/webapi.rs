@@ -42,11 +42,14 @@ static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 static CONFIG: Lazy<WebApiConfig> = Lazy::new(|| {
-    let f = fs::File::open("/etc/filecoin-ffi.yaml").expect("open config file failed");
-    let config = serde_yaml::from_reader(f).unwrap();
+    let location = env::var("FILECOIN_FFI_CONFIG")
+        .unwrap_or("/etc/filecoin-ffi.yaml".to_string());
+    info!("Use config file: {}", location);
+    let f = fs::File::open(location).expect("open config file failed");
+    let server_cfg = serde_yaml::from_reader(f).unwrap();
 
-    info!("filecoin-webapi config: {:?}", config);
-    config
+    debug!("filecoin-webapi config: {:?}", server_cfg);
+    server_cfg
 });
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -359,7 +362,7 @@ pub(crate) unsafe fn fil_seal_commit_phase2_webapi(
             };
             let json_data = json!(web_data);
             let r = webapi_post_polling!("seal/seal_commit_phase2", &json_data);
-            info!("response: {:?}", r);
+            trace!("response: {:?}", r);
 
             if let Err(e) = r {
                 response.status_code = FCPResponseStatus::FCPUnclassifiedError;
