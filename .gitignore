@@ -2,6 +2,7 @@
 **/include
 **/paramcache
 **/target
+**/.idea/
 .install-filcrypto
 filcrypto.h
 filcrypto.pc
@@ -9,3 +10,4 @@ filecoin.h
 filecoin.pc
 *.a
 simulator
+rust/src/scheduler*.rs

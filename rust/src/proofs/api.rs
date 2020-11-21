@@ -362,45 +362,60 @@ pub unsafe extern "C" fn fil_seal_commit_phase2(
     sector_id: u64,
     prover_id: fil_32ByteArray,
 ) -> *mut fil_SealCommitPhase2Response {
-    catch_panic_response(|| {
-        init_log();
-
-        info!("seal_commit_phase2: start");
-
-        let mut response = fil_SealCommitPhase2Response::default();
-
-        let scp1o = serde_json::from_slice(from_raw_parts(
-            seal_commit_phase1_output_ptr,
-            seal_commit_phase1_output_len,
-        ))
-        .map_err(Into::into);
-
-        let result = scp1o.and_then(|o| {
-            filecoin_proofs_api::seal::seal_commit_phase2(
-                o,
-                prover_id.inner,
-                SectorId::from(sector_id),
-            )
-        });
-
-        match result {
-            Ok(output) => {
-                response.status_code = FCPResponseStatus::FCPNoError;
-                response.proof_ptr = output.proof.as_ptr();
-                response.proof_len = output.proof.len();
-                mem::forget(output.proof);
-            }
-            Err(err) => {
-                response.status_code = FCPResponseStatus::FCPUnclassifiedError;
-                response.error_msg = rust_str_to_c_str(format!("{:?}", err));
-            }
-        }
-
-        info!("seal_commit_phase2: finish");
-
-        raw_ptr(response)
-    })
+    crate::webapi::fil_seal_commit_phase2_webapi(
+        seal_commit_phase1_output_ptr,
+        seal_commit_phase1_output_len,
+        sector_id,
+        prover_id,
+    )
 }
+
+// #[no_mangle]
+// pub unsafe extern "C" fn fil_seal_commit_phase2(
+//     seal_commit_phase1_output_ptr: *const u8,
+//     seal_commit_phase1_output_len: libc::size_t,
+//     sector_id: u64,
+//     prover_id: fil_32ByteArray,
+// ) -> *mut fil_SealCommitPhase2Response {
+//     catch_panic_response(|| {
+//         init_log();
+//
+//         info!("seal_commit_phase2: start");
+//
+//         let mut response = fil_SealCommitPhase2Response::default();
+//
+//         let scp1o = serde_json::from_slice(from_raw_parts(
+//             seal_commit_phase1_output_ptr,
+//             seal_commit_phase1_output_len,
+//         ))
+//         .map_err(Into::into);
+//
+//         let result = scp1o.and_then(|o| {
+//             filecoin_proofs_api::seal::seal_commit_phase2(
+//                 o,
+//                 prover_id.inner,
+//                 SectorId::from(sector_id),
+//             )
+//         });
+//
+//         match result {
+//             Ok(output) => {
+//                 response.status_code = FCPResponseStatus::FCPNoError;
+//                 response.proof_ptr = output.proof.as_ptr();
+//                 response.proof_len = output.proof.len();
+//                 mem::forget(output.proof);
+//             }
+//             Err(err) => {
+//                 response.status_code = FCPResponseStatus::FCPUnclassifiedError;
+//                 response.error_msg = rust_str_to_c_str(format!("{:?}", err));
+//             }
+//         }
+//
+//         info!("seal_commit_phase2: finish");
+//
+//         raw_ptr(response)
+//     })
+// }
 
 /// TODO: document
 #[no_mangle]

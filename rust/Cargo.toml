@@ -32,6 +32,15 @@ anyhow = "1.0.23"
 bellperson = { version = "0.12.0", default-features = false, features = ["gpu"] }
 serde_json = "1.0.46"
 rust-gpu-tools = "0.2.0"
+serde = { version = "*", features = ["derive"] }
+serde_yaml = "*"
+once_cell = "*"
+reqwest = { version = "*", features = ["json", "blocking"] }
+filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", branch = "master" }
+grpc = "~0.8"
+grpc-protobuf = "*"
+protobuf = "~2"
+futures = "~0.3"
 
 [dependencies.filecoin-proofs-api]
 package = "filecoin-proofs-api"
@@ -40,6 +49,7 @@ default-features = false
 
 [build-dependencies]
 cbindgen = "= 0.14.0"
+protoc-rust-grpc = "~0.8"
 
 [dev-dependencies]
 tempfile = "3.0.8"
