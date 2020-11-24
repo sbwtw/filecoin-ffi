@@ -106,7 +106,11 @@ fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> 
         let f = client
             .try_access(RequestOptions::new(), req.clone())
             .join_metadata_result();
-        let r = executor::block_on(f).expect("grpc req error").1;
+        let r = match executor::block_on(f) {
+            Ok(r) => r.1,
+            e @ _ => { warn!("grpc access error: {:?}", e); return None; },
+        };
+
         if r.has_token() {
             debug!("{} got token {}", &req_name, r.get_token().get_token());
             break (Arc::new(client), Arc::new((r.get_token()).clone()));
