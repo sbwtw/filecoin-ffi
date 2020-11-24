@@ -42,8 +42,7 @@ static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
 });
 
 static CONFIG: Lazy<WebApiConfig> = Lazy::new(|| {
-    let location = env::var("FILECOIN_FFI_CONFIG")
-        .unwrap_or("/etc/filecoin-ffi.yaml".to_string());
+    let location = env::var("FILECOIN_FFI_CONFIG").unwrap_or("/etc/filecoin-ffi.yaml".to_string());
     info!("Use config file: {}", location);
     let f = fs::File::open(location).expect("open config file failed");
     let server_cfg = serde_yaml::from_reader(f).unwrap();
@@ -81,9 +80,15 @@ macro_rules! wait_cond {
     }};
 }
 
-fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> LiveGuard {
+fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> Option<LiveGuard> {
     let client: SchedulerClient =
-        SchedulerClient::new_plain("127.0.0.1", 3000, Default::default()).unwrap();
+        match SchedulerClient::new_plain("127.0.0.1", 3000, Default::default()) {
+            Ok(client) => client,
+            Err(e) => {
+                warn!("grpc init failed: {:?}", e);
+                return None;
+            }
+        };
 
     let req_name = format!(
         "{}-{}",
@@ -110,7 +115,7 @@ fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> 
         thread::sleep(Duration::from_secs(poll_time));
     };
 
-    LiveGuard::new(client, token, keep_live_time)
+    Some(LiveGuard::new(client, token, keep_live_time))
 }
 
 pub struct LiveGuard {
