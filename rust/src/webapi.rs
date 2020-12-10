@@ -108,7 +108,7 @@ fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> 
             .join_metadata_result();
         let r = match executor::block_on(f) {
             Ok(r) => r.1,
-            e @ _ => { warn!("grpc access error: {:?}", e); return None; },
+            e @ _ => { warn!("scheduler is disabled due to grpc access error: {:?}.", e); return None; },
         };
 
         if r.has_token() {
