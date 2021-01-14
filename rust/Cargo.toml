@@ -43,8 +43,8 @@ protobuf = "~2"
 futures = "~0.3"
 
 [dependencies.filecoin-proofs-api]
-package = "filecoin-proofs-api"
-version = "5.4.1"
+git = "https://github.com/sbwtw/rust-filecoin-proofs-api"
+branch = "webapi/v5.4.1"
 default-features = false
 
 [build-dependencies]
