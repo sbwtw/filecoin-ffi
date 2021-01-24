@@ -29,14 +29,14 @@ rand = "0.7"
 rand_chacha = "0.2.1"
 rayon = "1.2.1"
 anyhow = "1.0.23"
-bellperson = { version = "0.12.0", default-features = false, features = ["gpu"] }
+bellperson = { version = "0.12.3", default-features = false, features = ["gpu"] }
 serde_json = "1.0.46"
 rust-gpu-tools = "0.2.0"
 serde = { version = "*", features = ["derive"] }
 serde_yaml = "*"
 once_cell = "*"
 reqwest = { version = "*", features = ["json", "blocking"] }
-filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", branch = "master" }
+filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", rev = "1c806f3" }
 grpc = "~0.8"
 grpc-protobuf = "*"
 protobuf = "~2"
@@ -58,3 +58,6 @@ tempfile = "3.0.8"
 default = ["pairing"]
 pairing = ["filecoin-proofs-api/pairing", "bellperson/pairing"]
 blst = ["filecoin-proofs-api/blst", "bellperson/blst"]
+
+[patch.crates-io]
+bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "2080Ti" }
