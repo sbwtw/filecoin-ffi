@@ -24,7 +24,24 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use std::{env, mem, thread};
 
-static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
+// static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
+//     let mut builder = ClientBuilder::new();
+//     for config in CONFIG.servers.iter() {
+//         if let Some(cert) = &config.cert {
+//             let mut buf = vec![];
+//             fs::File::open(cert)
+//                 .expect("open cert file failed!")
+//                 .read_to_end(&mut buf)
+//                 .expect("read cert file failed");
+//             let c = Certificate::from_pem(&buf).expect("read PEM cert failed");
+//             builder = builder.add_root_certificate(c);
+//         }
+//     }
+//
+//     builder.build().expect("Build Reqwest client failed!")
+// });
+
+fn reqwest_client() -> Client {
     let mut builder = ClientBuilder::new();
     for config in CONFIG.servers.iter() {
         if let Some(cert) = &config.cert {
@@ -39,7 +56,7 @@ static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     }
 
     builder.build().expect("Build Reqwest client failed!")
-});
+}
 
 static CONFIG: Lazy<WebApiConfig> = Lazy::new(|| {
     let location = env::var("FILECOIN_FFI_CONFIG").unwrap_or("/etc/filecoin-ffi.yaml".to_string());
@@ -233,6 +250,8 @@ fn webapi_post_pick<T: Serialize + ?Sized>(
             Ok(val) => return Ok((server.clone(), val)),
             Err(WebApiError::Error(err)) => return Err(err),
             Err(WebApiError::StatusError(stat)) => {
+                debug!("status error: {}", stat);
+
                 // TooManyRequests
                 if stat != 429 {
                     return Err(format!("Err with code: {}", stat));
@@ -254,7 +273,7 @@ fn webapi_post<T: Serialize + ?Sized>(
 ) -> Result<Value, WebApiError> {
     trace!("webapi_post url: {}", url);
 
-    let post = REQWEST_CLIENT.post(url).header("Authorization", token);
+    let post = reqwest_client().post(url).header("Authorization", token);
     let text = match post.json(json).send() {
         Ok(response) => {
             let stat = response.status().as_u16();
@@ -312,15 +331,16 @@ pub(crate) fn webapi_post_polling<T: Serialize + ?Sized>(
         match poll_state {
             PollingState::Done(result) => return Ok(result),
             PollingState::Pending => {
-                trace!("proc_id: {}, Pending...", proc_id);
+                debug!("proc_id: {}, Pending...", proc_id);
             }
             e @ _ => {
-                debug!("Polling Error: {:?}", e);
+                warn!("Polling Error: {:?}", e);
                 return Err(format!("poll_state error: {:?}", e));
             }
         }
 
         // sleep 30s
+        trace!("sleep 30s");
         let time = Duration::from_secs(30);
         thread::sleep(time);
     }
@@ -370,10 +390,11 @@ pub(crate) unsafe fn fil_seal_commit_phase2_webapi(
                 sector_id: SectorId::from(sector_id),
             };
             let json_data = json!(web_data);
+            trace!("webapi_post_polling: start");
             let r = webapi_post_polling!("seal/seal_commit_phase2", &json_data);
-            trace!("response: {:?}", r);
 
             if let Err(e) = r {
+                trace!("response: {:?}", &e);
                 response.status_code = FCPResponseStatus::FCPUnclassifiedError;
                 response.error_msg = rust_str_to_c_str(format!("{:?}", e));
                 return raw_ptr(response);
