@@ -24,24 +24,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use std::{env, mem, thread};
 
-// static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
-//     let mut builder = ClientBuilder::new();
-//     for config in CONFIG.servers.iter() {
-//         if let Some(cert) = &config.cert {
-//             let mut buf = vec![];
-//             fs::File::open(cert)
-//                 .expect("open cert file failed!")
-//                 .read_to_end(&mut buf)
-//                 .expect("read cert file failed");
-//             let c = Certificate::from_pem(&buf).expect("read PEM cert failed");
-//             builder = builder.add_root_certificate(c);
-//         }
-//     }
-//
-//     builder.build().expect("Build Reqwest client failed!")
-// });
-
-fn reqwest_client() -> Client {
+static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
     let mut builder = ClientBuilder::new();
     for config in CONFIG.servers.iter() {
         if let Some(cert) = &config.cert {
@@ -56,7 +39,24 @@ fn reqwest_client() -> Client {
     }
 
     builder.build().expect("Build Reqwest client failed!")
-}
+});
+
+// fn reqwest_client() -> Client {
+//     let mut builder = ClientBuilder::new();
+//     for config in CONFIG.servers.iter() {
+//         if let Some(cert) = &config.cert {
+//             let mut buf = vec![];
+//             fs::File::open(cert)
+//                 .expect("open cert file failed!")
+//                 .read_to_end(&mut buf)
+//                 .expect("read cert file failed");
+//             let c = Certificate::from_pem(&buf).expect("read PEM cert failed");
+//             builder = builder.add_root_certificate(c);
+//         }
+//     }
+//
+//     builder.build().expect("Build Reqwest client failed!")
+// }
 
 static CONFIG: Lazy<WebApiConfig> = Lazy::new(|| {
     let location = env::var("FILECOIN_FFI_CONFIG").unwrap_or("/etc/filecoin-ffi.yaml".to_string());
@@ -273,7 +273,7 @@ fn webapi_post<T: Serialize + ?Sized>(
 ) -> Result<Value, WebApiError> {
     trace!("webapi_post url: {}", url);
 
-    let post = reqwest_client().post(url).header("Authorization", token);
+    let post = REQWEST_CLIENT.post(url).header("Authorization", token);
     let text = match post.json(json).send() {
         Ok(response) => {
             let stat = response.status().as_u16();
@@ -283,15 +283,18 @@ fn webapi_post<T: Serialize + ?Sized>(
 
             response
                 .text()
-                .map_err(|e| WebApiError::Error(format!("{:?}", e)))?
+                .map_err(|e| WebApiError::Error(format!("webapi_post response error: {:?}", e)))?
         }
-        Err(e) => return Err(WebApiError::Error(format!("{:?}", e))),
+        Err(e) => return Err(WebApiError::Error(format!("webapi_post error: {:?}", e))),
     };
 
-    let value: Value =
-        serde_json::from_str(&text).map_err(|e| WebApiError::Error(format!("{:?}", e)))?;
+    let value: Value = serde_json::from_str(&text)
+        .map_err(|e| WebApiError::Error(format!("webapi_post parse error: {:?}", e)))?;
     if value.get("Err").is_some() {
-        return Err(WebApiError::Error(format!("{:?}", value)));
+        return Err(WebApiError::Error(format!(
+            "webapi_post remote return error: {:?}",
+            value
+        )));
     }
 
     return Ok(value);
@@ -339,9 +342,9 @@ pub(crate) fn webapi_post_polling<T: Serialize + ?Sized>(
             }
         }
 
-        // sleep 30s
-        trace!("sleep 30s");
-        let time = Duration::from_secs(30);
+        // sleep 60s
+        trace!("sleep 60s");
+        let time = Duration::from_secs(60);
         thread::sleep(time);
     }
 }

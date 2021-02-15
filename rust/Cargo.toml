@@ -35,7 +35,7 @@ rust-gpu-tools = "0.2.0"
 serde = { version = "*", features = ["derive"] }
 serde_yaml = "*"
 once_cell = "*"
-reqwest = { version = "*", features = ["json", "blocking"] }
+reqwest = { version = "^0.11", features = ["json", "blocking"] }
 filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", rev = "1c806f3" }
 grpc = "~0.8"
 grpc-protobuf = "*"
@@ -60,4 +60,4 @@ pairing = ["filecoin-proofs-api/pairing", "bellperson/pairing"]
 blst = ["filecoin-proofs-api/blst", "bellperson/blst"]
 
 [patch.crates-io]
-bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "2080Ti" }
+bellperson = { git = "https://github.com/sbwtw/bellperson", branch = "3080" }
