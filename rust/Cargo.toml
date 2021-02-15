@@ -39,7 +39,7 @@ filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", rev = "b50
 serde = { version = "*", features = ["derive"] }
 serde_yaml = "*"
 once_cell = "*"
-reqwest = { version = "*", features = ["json", "blocking"] }
+reqwest = { version = "^0.11", features = ["json", "blocking"] }
 
 [dependencies.filecoin-proofs-api]
 package = "filecoin-proofs-api"
