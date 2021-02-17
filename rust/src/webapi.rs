@@ -1,6 +1,6 @@
 use crate::proofs::types::*;
-use crate::scheduler::*;
-use crate::scheduler_grpc::SchedulerClient;
+// use crate::scheduler::*;
+// use crate::scheduler_grpc::SchedulerClient;
 use crate::util::api::init_log;
 use ffi_toolkit::{catch_panic_response, raw_ptr, rust_str_to_c_str, FCPResponseStatus};
 use filecoin_proofs_api::seal::SealCommitPhase2Output;
@@ -8,7 +8,7 @@ use filecoin_proofs_api::SectorId;
 use filecoin_webapi::polling::PollingState;
 use filecoin_webapi::*;
 use futures::executor;
-use grpc::{ClientStubExt, RequestOptions};
+// use grpc::{ClientStubExt, RequestOptions};
 use log::*;
 use once_cell::sync::Lazy;
 use rand::seq::SliceRandom;
@@ -89,121 +89,121 @@ impl WebApiConfig {
     }
 }
 
-/*=== gRpc implements ===*/
-#[macro_export]
-macro_rules! wait_cond {
-    ($cond:expr, $poll_time:expr, $keep_live_time:expr) => {{
-        grpc_request($cond, $poll_time, $keep_live_time)
-    }};
-}
+// /*=== gRpc implements ===*/
+// #[macro_export]
+// macro_rules! wait_cond {
+//     ($cond:expr, $poll_time:expr, $keep_live_time:expr) => {{
+//         grpc_request($cond, $poll_time, $keep_live_time)
+//     }};
+// }
 
-fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> Option<LiveGuard> {
-    let client: SchedulerClient =
-        match SchedulerClient::new_plain("127.0.0.1", 3000, Default::default()) {
-            Ok(client) => client,
-            Err(e) => {
-                warn!("grpc init failed: {:?}", e);
-                return None;
-            }
-        };
+// fn grpc_request<S: AsRef<str>>(cond: S, poll_time: u64, keep_live_time: u64) -> Option<LiveGuard> {
+//     let client: SchedulerClient =
+//         match SchedulerClient::new_plain("127.0.0.1", 3000, Default::default()) {
+//             Ok(client) => client,
+//             Err(e) => {
+//                 warn!("grpc init failed: {:?}", e);
+//                 return None;
+//             }
+//         };
+//
+//     let req_name = format!(
+//         "{}-{}",
+//         cond.as_ref(),
+//         SystemTime::now()
+//             .duration_since(SystemTime::UNIX_EPOCH)
+//             .unwrap()
+//             .as_nanos()
+//     );
+//     let mut req = AccessResource::new();
+//     req.set_request_resource(cond.as_ref().to_owned());
+//     req.set_name(req_name.clone());
+//
+//     let (client, token) = loop {
+//         let f = client
+//             .try_access(RequestOptions::new(), req.clone())
+//             .join_metadata_result();
+//         let r = match executor::block_on(f) {
+//             Ok(r) => r.1,
+//             e @ _ => { warn!("scheduler is disabled due to grpc access error: {:?}.", e); return None; },
+//         };
+//
+//         if r.has_token() {
+//             debug!("{} got token {}", &req_name, r.get_token().get_token());
+//             break (Arc::new(client), Arc::new((r.get_token()).clone()));
+//         }
+//
+//         thread::sleep(Duration::from_secs(poll_time));
+//     };
+//
+//     Some(LiveGuard::new(client, token, keep_live_time))
+// }
+//
+// pub struct LiveGuard {
+//     client: Arc<SchedulerClient>,
+//     ping_token: Arc<ResourceToken>,
+//     thread_handle: Option<thread::JoinHandle<()>>,
+//     thread_exit_sender: Sender<()>,
+// }
 
-    let req_name = format!(
-        "{}-{}",
-        cond.as_ref(),
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    );
-    let mut req = AccessResource::new();
-    req.set_request_resource(cond.as_ref().to_owned());
-    req.set_name(req_name.clone());
-
-    let (client, token) = loop {
-        let f = client
-            .try_access(RequestOptions::new(), req.clone())
-            .join_metadata_result();
-        let r = match executor::block_on(f) {
-            Ok(r) => r.1,
-            e @ _ => { warn!("scheduler is disabled due to grpc access error: {:?}.", e); return None; },
-        };
-
-        if r.has_token() {
-            debug!("{} got token {}", &req_name, r.get_token().get_token());
-            break (Arc::new(client), Arc::new((r.get_token()).clone()));
-        }
-
-        thread::sleep(Duration::from_secs(poll_time));
-    };
-
-    Some(LiveGuard::new(client, token, keep_live_time))
-}
-
-pub struct LiveGuard {
-    client: Arc<SchedulerClient>,
-    ping_token: Arc<ResourceToken>,
-    thread_handle: Option<thread::JoinHandle<()>>,
-    thread_exit_sender: Sender<()>,
-}
-
-impl LiveGuard {
-    #[allow(dead_code)]
-    fn new(
-        client: Arc<SchedulerClient>,
-        token: Arc<ResourceToken>,
-        keep_live_timeout: u64,
-    ) -> Self {
-        let (tx, rx) = channel();
-        let mut guard = Self {
-            client: client.clone(),
-            ping_token: token.clone(),
-            thread_handle: None,
-            thread_exit_sender: tx,
-        };
-
-        let handle = thread::spawn(move || loop {
-            match rx.try_recv() {
-                Ok(_) => {
-                    debug!("LiveGuard {} destroyed", token.get_token());
-                    break;
-                }
-                Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => {
-                    warn!("recv error");
-                    break;
-                }
-            }
-
-            thread::sleep(Duration::from_secs(keep_live_timeout));
-            trace!("rpc ping token {}", token.get_token());
-            let f = client
-                .ping(RequestOptions::new(), (*token).clone())
-                .drop_metadata();
-
-            executor::block_on(f).expect("grpc req error");
-        });
-
-        guard.thread_handle = Some(handle);
-        guard
-    }
-}
-
-impl std::ops::Drop for LiveGuard {
-    fn drop(&mut self) {
-        self.thread_exit_sender.send(()).unwrap();
-        self.thread_handle
-            .take()
-            .unwrap()
-            .join()
-            .expect("Thread join failed");
-        let f = self
-            .client
-            .remove_guard(RequestOptions::new(), (*self.ping_token).clone())
-            .drop_metadata();
-
-        executor::block_on(f).expect("grpc req error");
-    }
-}
+// impl LiveGuard {
+//     #[allow(dead_code)]
+//     fn new(
+//         client: Arc<SchedulerClient>,
+//         token: Arc<ResourceToken>,
+//         keep_live_timeout: u64,
+//     ) -> Self {
+//         let (tx, rx) = channel();
+//         let mut guard = Self {
+//             client: client.clone(),
+//             ping_token: token.clone(),
+//             thread_handle: None,
+//             thread_exit_sender: tx,
+//         };
+//
+//         let handle = thread::spawn(move || loop {
+//             match rx.try_recv() {
+//                 Ok(_) => {
+//                     debug!("LiveGuard {} destroyed", token.get_token());
+//                     break;
+//                 }
+//                 Err(TryRecvError::Empty) => {}
+//                 Err(TryRecvError::Disconnected) => {
+//                     warn!("recv error");
+//                     break;
+//                 }
+//             }
+//
+//             thread::sleep(Duration::from_secs(keep_live_timeout));
+//             trace!("rpc ping token {}", token.get_token());
+//             let f = client
+//                 .ping(RequestOptions::new(), (*token).clone())
+//                 .drop_metadata();
+//
+//             executor::block_on(f).expect("grpc req error");
+//         });
+//
+//         guard.thread_handle = Some(handle);
+//         guard
+//     }
+// }
+//
+// impl std::ops::Drop for LiveGuard {
+//     fn drop(&mut self) {
+//         self.thread_exit_sender.send(()).unwrap();
+//         self.thread_handle
+//             .take()
+//             .unwrap()
+//             .join()
+//             .expect("Thread join failed");
+//         let f = self
+//             .client
+//             .remove_guard(RequestOptions::new(), (*self.ping_token).clone())
+//             .drop_metadata();
+//
+//         executor::block_on(f).expect("grpc req error");
+//     }
+// }
 
 /*=== webapi macros ===*/
 
@@ -376,7 +376,7 @@ pub(crate) unsafe fn fil_seal_commit_phase2_webapi(
 
         info!("seal_commit_phase2: start");
 
-        let _guard = wait_cond!("C2".to_string(), 30, 60);
+        // let _guard = wait_cond!("C2".to_string(), 30, 60);
 
         let mut response = fil_SealCommitPhase2Response::default();
 

@@ -37,9 +37,9 @@ serde_yaml = "*"
 once_cell = "*"
 reqwest = { version = "^0.11", features = ["json", "blocking"] }
 filecoin-webapi = { git = "https://github.com/sbwtw/Filecoin-webapi", rev = "1c806f3" }
-grpc = "~0.8"
-grpc-protobuf = "*"
-protobuf = "~2"
+#grpc = "~0.8"
+#grpc-protobuf = "*"
+#protobuf = "~2"
 futures = "~0.3"
 
 [dependencies.filecoin-proofs-api]
