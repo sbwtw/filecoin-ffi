@@ -7,8 +7,6 @@ use filecoin_proofs_api::seal::SealCommitPhase2Output;
 use filecoin_proofs_api::SectorId;
 use filecoin_webapi::polling::PollingState;
 use filecoin_webapi::*;
-use futures::executor;
-// use grpc::{ClientStubExt, RequestOptions};
 use log::*;
 use once_cell::sync::Lazy;
 use rand::seq::SliceRandom;
@@ -19,9 +17,7 @@ use serde_json::{from_value, json, Value};
 use std::fs::{self};
 use std::io::Read;
 use std::slice::from_raw_parts;
-use std::sync::mpsc::{channel, Sender, TryRecvError};
-use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use std::{env, mem, thread};
 
 static REQWEST_CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -233,6 +229,7 @@ impl WebApiConfig {
 enum WebApiError {
     StatusError(u16),
     Error(String),
+    TimeOut,
 }
 
 /// pick server to post, if successful, return value and server host
@@ -248,6 +245,9 @@ fn webapi_post_pick<T: Serialize + ?Sized>(
         let url = format!("{}{}", server.url, path);
         match webapi_post(&url, &server.token, json) {
             Ok(val) => return Ok((server.clone(), val)),
+            Err(WebApiError::TimeOut) => {
+                warn!("webapi_post_pick timeout, retry...");
+            }
             Err(WebApiError::Error(err)) => return Err(err),
             Err(WebApiError::StatusError(stat)) => {
                 debug!("status error: {}", stat);
@@ -256,11 +256,12 @@ fn webapi_post_pick<T: Serialize + ?Sized>(
                 if stat != 429 {
                     return Err(format!("Err with code: {}", stat));
                 }
+
+                // sleep
+                debug!("TooManyRequests in server {:?}, waiting...", server);
             }
         }
 
-        // sleep
-        debug!("TooManyRequests in server {:?}, waiting...", server);
         thread::sleep(Duration::from_secs(60));
     }
 }
@@ -285,6 +286,7 @@ fn webapi_post<T: Serialize + ?Sized>(
                 .text()
                 .map_err(|e| WebApiError::Error(format!("webapi_post response error: {:?}", e)))?
         }
+        Err(e) if e.is_timeout() => return Err(WebApiError::TimeOut),
         Err(e) => return Err(WebApiError::Error(format!("webapi_post error: {:?}", e))),
     };
 
@@ -327,8 +329,14 @@ pub(crate) fn webapi_post_polling<T: Serialize + ?Sized>(
 
     loop {
         let url = format!("{}{}", server.url, "sys/query_state");
-        let val =
-            webapi_post(&url, &server.token, &json!(proc_id)).map_err(|e| format!("{:?}", e))?;
+        let val = match webapi_post(&url, &server.token, &json!(proc_id)) {
+            Ok(x) => x,
+            Err(WebApiError::TimeOut) => {
+                warn!("Polling timeout, retry...");
+                continue;
+            }
+            Err(e) => return Err(format!("{:#?}", e)),
+        };
         let poll_state: PollingState = from_value(val).map_err(|e| format!("{:?}", e))?;
 
         match poll_state {
